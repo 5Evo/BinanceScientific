@@ -1,4 +1,6 @@
 """
+Библиотека для подключения к Бинанс: python-binance (сокеты)
+
 Данные, которые вы получаете в ответ на запрос торговых данных на Binance, представляют собой словарь Python.
 
 Каждый ключ в словаре соответствует определенному атрибуту торговых данных. Вот что означают ключи в вашем словаре:
@@ -25,8 +27,10 @@
 
 import asyncio
 import cProfile
+import datetime
+
 from binance import AsyncClient, BinanceSocketManager
-from service_bot import check_file, write_to_file
+from service_bot import check_file, write_to_file, convert_timestamp
 from settings import KLINE_INTERVAL, FILENAME
 
 ######## задел на будущее: получение ключей из окружения  ######
@@ -37,7 +41,7 @@ from settings import KLINE_INTERVAL, FILENAME
 
 
 #  определяем функцию для обработки сообщений из сокета сделок
-@write_to_file
+#@write_to_file
 async def process_res(res):
     try:
         print(res)
@@ -47,7 +51,7 @@ async def process_res(res):
 
 
 # определяем функцию для обработки сообщений из сокета стакана
-@write_to_file
+#@write_to_file
 async def process_orderbook(orderbook):
     try:
         print(orderbook)
@@ -55,8 +59,8 @@ async def process_orderbook(orderbook):
     except Exception as e:
         print(f"An error occurred: {e}")
 
-# определяем функцию для обработки сообщений из сокета стакана
-@write_to_file
+# определяем функцию для обработки сообщений из сокета свечей
+#@write_to_file
 async def process_candle(candle):
     try:
         print(candle)
@@ -72,31 +76,32 @@ async def my_bot():
     # start any sockets here, i.e a trade socket
     ts = bm.trade_socket('BTCUSDT')  # создаем сокет для торговли валютной парой BTCUSDT
     ds = bm.depth_socket('BTCUSDT')  # создаем сокет для получения данных стакана валютной пары BTCUSDT
-    ks = bm.kline_socket('BTCUSDT', interval=KLINE_INTERVAL)
+    #ks = bm.kline_socket('BTCUSDT', interval=KLINE_INTERVAL)    # создаем сокет для получения данных свечей BTCUSDT
 
-    # then start receiving messages
+    # начинаем получать сообщения из сокетов:
+    start_time = datetime.datetime.now()
+    # ds as dscm, \
+    #
     async with \
-            ds as dscm, \
-            ts as tscm, \
-            ks as ksm:  # начинаем получать сообщения из сокетов
-
+        ts as tscm, \
+        ds as dscm:
+        #ks as ksm:
         while True:
             res = await tscm.recv()     # получаем сообщение из сокета сделок
-            #print(f'{res = }')        # выводим сообщение на экран
+            print(f'{res = }')        # выводим сообщение на экран
             await process_res(res)      # запускаем сохранение в файл и консольный вывод
 
-            # orderbook = await dscm.recv()       # получаем сообщение из сокета стакана
-            # #print(f'{orderbook = }')          # выводим сообщение на экран
-            # await process_orderbook(orderbook)  # запускаем сохранение в файл и консольный вывод
+            orderbook = await dscm.recv()       # получаем сообщение из сокета стакана
+            print(f'{orderbook = }')          # выводим сообщение на экран
+            await process_orderbook(orderbook)  # запускаем сохранение в файл и консольный вывод
 
-            canlde_res = await ksm.recv()      # получаем сообщение из сокета свечей
+            #canlde_res = await ksm.recv()      # получаем сообщение из сокета свечей
             #print(f'{canlde_res = }')          # выводим сообщение на экран
-            await process_candle(canlde_res)
+            #await process_candle(canlde_res)    # выводим в консоль и сохраняем на диск
 
+            print(datetime.datetime.now() - start_time)
 
 if __name__ == "__main__":
 
     loop = asyncio.new_event_loop()
     loop.run_until_complete(my_bot())
-
-    #loop.run_until_complete(cProfile.run('my_bot()'))

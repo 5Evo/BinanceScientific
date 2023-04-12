@@ -1,3 +1,7 @@
+"""
+Набор сервисных функций для получения и обработки данных торгового бота
+"""
+
 import os
 import datetime
 from settings import BASE_DIR, FILENAME
@@ -73,8 +77,6 @@ def write_to_file(func):
         except Exception as e:
             print(f"An error occurred: {e}")
     return wrapper
-
-
 
 
 if __name__ == "__main__":
