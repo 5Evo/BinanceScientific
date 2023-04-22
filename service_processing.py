@@ -9,20 +9,6 @@ def cursor(df, index):
     return [index, df.loc[index, 'date'], df.loc[index, 'close']]
 
 
-# def candel_trend(df, index):
-#     """
-#     функция возвращает 'up' или 'down' в зависиомсти от ...
-#     """
-#     move_candle = df.loc[index, 'close'] - df.loc[index, 'open']
-#     if move_candle > 0:
-#         trend = 'up'
-#     elif move_candle < 0:
-#         trend = 'down'
-#     else:
-#         trend = 'side'
-#     return trend
-#
-
 def init_data_set(data_type='full'):
     from settings import file_full, file_test, path
     file_name = file_full if data_type == 'full' else file_test
@@ -85,3 +71,118 @@ def compile_extr(df, index, extr_type):
         raise Exception('Ошибка в функции compile_extr: не смогли определить тип экстремума')
     extr.append(corr_price)
     return extr
+
+
+def update_last_extremum(extremum_list, correct_extr):
+    # обновим последний экстремум в списке
+    try:
+        extremum_list[-1] = correct_extr
+    except Exception as e:
+        print(
+            f'__update_last_extremum__: не смогли обновить экстремум в списке. {traceback.format_tb(e.__traceback__)}')
+
+
+def add_new_extr(extremum_list, new_extr):
+    # добавим новый экстремум в списке
+    try:
+        extremum_list.append(new_extr)
+    except Exception as e:
+        print(
+            f'__update_last_extremum__: не смогли обновить экстремум в списке. {traceback.format_tb(e.__traceback__)}')
+
+
+def col_name_trend():
+    return 'trend-' + str(correction)
+
+
+def add_trend_into_df(df, index, trend_type):
+    df.loc[index, col_name_trend()] = trend_type
+
+
+def search_after_mx(df, extremum_list, index):
+    """
+    последний найденый экстремум был mx (максимум).
+    Дальше может быть как рост, так и падение
+    :param extremum_list: список всех найденных экстремумов
+    :param index: текущий индекс свечей
+    :return: список всех экстремумов
+    """
+    # Проверим что не проскочили окончание df:
+    if index > df.shape[0]:
+        raise Exception(f'__search_after_mx__: Дошли до конца df. {index = }')
+    # ------------------------------------------
+
+    # блок определения перменных для функции:
+    prev_mx = extremum_list[-1][2]
+    last_extr_type = 'mx'
+    new_extr_type = 'mn'
+    limit_corr = mx_corr(prev_mx)
+    current_price = df.loc[index, 'close']
+    # ______________________________________
+
+    if current_price > prev_mx:  # цена закрытия снова выросла
+        new_extr = compile_extr(df, index, last_extr_type)
+        update_last_extremum(extremum_list, new_extr)
+        add_trend_into_df(df, index, 'up')
+
+    elif current_price == prev_mx:  # повторили старый экстремум
+        upd_ext = compile_extr(df, index, last_extr_type)
+        update_last_extremum(extremum_list, upd_ext)  # обновим (передвинем) последний экстремум
+        add_trend_into_df(df, index, 'up')
+
+    elif prev_mx > current_price > limit_corr:  # идет откат в пределах допустимого
+        add_trend_into_df(df, index, 'up')
+        return  # выходим из функциии, ничего не делаем
+
+    elif limit_corr >= current_price:  # откатились сверх нормы. фиксируем новый экстремум:
+        new_extr = compile_extr(df, index, new_extr_type)
+        add_new_extr(extremum_list, new_extr)
+        add_trend_into_df(df, index, 'down')
+
+    else:
+        raise Exception('Ошибка в алгоритме: не смогли сравнить current_close')
+
+
+def search_after_mn(df, extremum_list, index):
+    """
+    последний найденый экстремум был mn (минимум).
+    Дальше может быть как рост, так и падение
+    :param extremum_list: список всех найденных экстремумов
+    :param index: текущий индекс свечей
+    :return: список всех экстремумов
+    """
+    # Проверим что не проскочили окончание df:
+    if index > df.shape[0]:
+        raise Exception(f'__search_after_mx__: Дошли до конца df. {index = }')
+    # ------------------------------------------
+
+    # блок определения перменных для функции:
+    prev_mn = extremum_list[-1][2]
+    last_extr_type = 'mn'
+    new_extr_type = 'mx'
+    limit_corr = mn_corr(prev_mn)
+    current_price = df.loc[index, 'close']
+    # ______________________________________
+
+    if current_price < prev_mn:  # цена закрытия снова упала
+        new_extr = compile_extr(df, index, last_extr_type)
+        update_last_extremum(extremum_list, new_extr)
+        add_trend_into_df(df, index, 'down')
+
+    elif current_price == prev_mn:  # повторили старый экстремум
+        upd_ext = compile_extr(df, index, last_extr_type)
+        update_last_extremum(extremum_list, upd_ext)  # обновим (передвинем) последний экстремум
+        add_trend_into_df(df, index, 'down')
+
+    elif prev_mn < current_price < limit_corr:  # идет откат в пределах допустимого
+        add_trend_into_df(df, index, 'down')
+        return  # выходим из функциии, ничего не делаем
+
+    elif current_price >= limit_corr:  # откатились сверх нормы. фиксируем новый экстремум:
+        new_extr = compile_extr(df, index, new_extr_type)
+        add_new_extr(extremum_list, new_extr)
+        add_trend_into_df(df, index, 'up')
+
+    else:
+        raise Exception('Ошибка в алгоритме: не смогли сравнить current_close')
+

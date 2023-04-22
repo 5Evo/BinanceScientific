@@ -10,11 +10,14 @@ is_test = True  # в зависимости от того для теста ил
 path = '/home/alex/binance_data/'
 file_test = '20_3_2023 - 2_4_2023 - 1m.txt'
 file_full = '1_1_2020 - 2_4_2023 - 1m.txt'
+file_calculated = 'data_calculated.csv'
+
 correction = 0.003  # относительное изменение цены, меньше которого движение цены включаем в более крупное движение
 
 
 # Настройки сокетов:
 KLINE_INTERVAL = '1s'   # интревал получения данных свечей для сокета 'ks = bm.kline_socket'
 
-if __name__ == "__main__":
-    pass
+# Настройки графического модуля
+SCREEN_WIDTH = 1900
+SCREEN_HEIGHT = 1000
