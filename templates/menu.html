@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Menu</title>
+</head>
+<body>
+    <nav>
+      <ul>
+        <li><a href="/init_test/">Инициировать тестовый датасет</a></li>
+        <li><a href="/init_full/">Инициировать ПОЛНЫЙ датасет</a></li>
+        <li><a href="/split/">Разбить датасет на движения (с сохранением в файл)</a></li>
+        <li><a href="/save_to_file/">Сохранить в файл</a></li>
+        <li><a href="/calculate_correction/">Посчитать коррекцию TimeFrame</a></li>
+        <li><a href="#">Изменить TimeFrame (15 минут)</a></li>
+        <li><a href="#">Выход</a></li>
+      </ul>
+    </nav>
+
+    {% block content %}{% endblock %}
+
+</body>
+</html>

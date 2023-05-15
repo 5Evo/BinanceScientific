@@ -7,7 +7,7 @@ from bokeh.models import RangeSlider, CustomJS, Range1d, LinearAxis, RangeTool, 
 from bokeh.layouts import column, layout
 
 from settings import SCREEN_HEIGHT, SCREEN_WIDTH
-from data_processing import col_name_trend, split_into_movements
+from service_processing import col_name_trend, split_into_movements
 
 
 def chart_range_slider(df):
@@ -124,9 +124,9 @@ def chart_onlain(df):
 if __name__ == "__main__":
     df = init_data_set('test')
     df = split_into_movements(df)
-    #df = df[:5000]
+    df = df[:5000]
 
-    #df["date"] = pd.to_datetime(df["date"])
+    df["date"] = pd.to_datetime(df["date"])
 
-    chart_range_slider(df)
-    #chart_range_tool(df)
+    #chart_range_slider(df)
+    chart_range_tool(df)

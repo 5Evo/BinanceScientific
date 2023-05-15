@@ -2,6 +2,7 @@
 Модуль используется для загрузки данных о фьючерсах с Бинанса
 Стоит задержка в получении данных, чтобы избежать бана за частые запросы.
 С помощью этого модуля получен рабочий датасет
+получаем фьючерсные данные KLINE
 """
 
 import requests
@@ -9,8 +10,6 @@ import pandas as pd
 import datetime
 import time
 import os
-import sys
-import io
 from settings import BASE_DIR, FILENAME
 from service_bot import check_file, write_to_file, convert_timestamp
 
