@@ -12,7 +12,9 @@ file_test = '20_3_2023 - 2_4_2023 - 1m.txt'
 file_full = '1_1_2020 - 2_4_2023 - 1m.txt'
 file_calculated = 'data_calculated.csv'
 
-
+# коэффициент пропорции ratio_coeff для разделения на волновые движения.
+# считается по формуле df.eval('(high - low) / close').median() * ratio_coeff
+ratio_coeff = 4
 
 # Настройки сокетов:
 KLINE_INTERVAL = '1s'   # интревал получения данных свечей для сокета 'ks = bm.kline_socket'

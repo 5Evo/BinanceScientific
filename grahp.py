@@ -122,11 +122,11 @@ def chart_onlain(df):
 
 
 if __name__ == "__main__":
-    df = init_data_set('test')
-    df = split_into_movements(df)
-    df = df[:5000]
+    df, message = init_data_set('test')
+    df, extremum_list, message = split_into_movements(df)
+    #df = df[:5000]
 
     df["date"] = pd.to_datetime(df["date"])
 
-    #chart_range_slider(df)
-    chart_range_tool(df)
+    chart_range_slider(df)
+    #chart_range_tool(df)

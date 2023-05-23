@@ -42,12 +42,12 @@ def menu(df):
         choice = input("Выберите действие: ")
 
         if choice == "1":
-            df = init_data_set('test')
+            df, message = init_data_set('test')
             print(df.columns.tolist())
         elif choice == "2":
-            df = init_data_set('full')
+            df, message = init_data_set('full')
         elif choice == "3":
-            df = split_into_movements(df)
+            df, extremum_list, message = split_into_movements(df)
             save_df_to_file(df)
         elif choice == "4":
             save_df_to_file(df)

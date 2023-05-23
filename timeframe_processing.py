@@ -40,7 +40,9 @@ def convert_timeframe(df, new_tf='15min'):
                                                       'date': "first"})
 
     new_df['new_index'] = range(len(new_df))  # добавляем новый столбец с последовательными значениями
-    new_df = new_df.set_index('new_index')  # устанавливаем новый столбец в качестве индекса
+    new_df.reset_index(inplace=True)
+    new_df.rename(columns={'index': 'timestamp  '}, inplace=True)
+    new_df.set_index('new_index', inplace=True)  # устанавливаем новый столбец в качестве индекса
     print(f'новый индекс: {new_df.index = }')
     return new_df
 
