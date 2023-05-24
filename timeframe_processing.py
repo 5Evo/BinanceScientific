@@ -25,7 +25,7 @@ def convert_timeframe(df, new_tf='15min'):
         https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
     :return:
     '''
-    print(f'Начальный инлекс: {df.index = }')
+    # print(f'Начальный инлекс: {df.index = }')
     df = df.set_index('timestamp')
 
     new_df = df.groupby(pd.Grouper(freq=new_tf)).agg({"open": "first",
@@ -43,7 +43,7 @@ def convert_timeframe(df, new_tf='15min'):
     new_df.reset_index(inplace=True)
     new_df.rename(columns={'index': 'timestamp  '}, inplace=True)
     new_df.set_index('new_index', inplace=True)  # устанавливаем новый столбец в качестве индекса
-    print(f'новый индекс: {new_df.index = }')
+    # print(f'новый индекс: {new_df.index = }')
     return new_df
 
 

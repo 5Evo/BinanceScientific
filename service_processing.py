@@ -55,7 +55,7 @@ def mx_corr(price, correction):
     :param price:
     :return:
     """
-    # print(f'price: {type(price)}, correction: {type(correction)}')
+    # print(f'price: {price}: {type(price)}, correction: {type(correction)}')
     return price * (1 - correction)
 
 
@@ -69,26 +69,56 @@ def mn_corr(price, correction):
     return price * (1 + correction)
 
 
-def compile_extr(df, index, extr_type):
+# def compile_extr(df, index, extr_type):
+#     """
+#     Функция сбора экстремума в виде списка. Работает, но не удобно обращаться к значениям списка.
+#     изменяю список на словарь в следующей функции.
+#
+#     соберем запись об экстремуме. формат должен быть:
+#     [index, date, close_price, 'mx'/'mn', correction_price]
+#
+#     :param extr_type:
+#     :param df:
+#     :param index:
+#     :param type:
+#     :return:
+#     """
+#     extr = cursor(df, index)
+#     extr.append(extr_type)
+#     correction = tf_correction(df)
+#     if extr_type == 'mn':
+#         corr_price = mn_corr(cursor(df, 0)[2], correction)
+#     elif extr_type == 'mx':
+#         corr_price = mx_corr(cursor(df, 0)[2], correction)
+#     else:
+#         raise Exception('Ошибка в функции compile_extr: не смогли определить тип экстремума')
+#     extr.append(corr_price)
+#     return extr
+
+
+def compile_extr_dict(df, index, extr_type):
     """
-    соберем запись об экстремуме. формат должен быть:
-    [index, date, close_price, 'mx'/'mn', correction_price]
+    соберем запись об экстремуме в виде словаря. формат должен быть:
+    {"index: index, "date": date, "close": close, "extr_type": 'mx'/'mn', "corr_price": correction_price}
     :param extr_type:
     :param df:
     :param index:
     :param type:
     :return:
+
+    [index, df.loc[index, 'date'], df.loc[index, 'close']]
     """
-    extr = cursor(df, index)
-    extr.append(extr_type)
-    correction = tf_correction(df)
+    correction = tf_correction(df)  # вычисляем допустимую коррекцию в движении в зависимости от timeframe
     if extr_type == 'mn':
         corr_price = mn_corr(cursor(df, 0)[2], correction)
     elif extr_type == 'mx':
         corr_price = mx_corr(cursor(df, 0)[2], correction)
     else:
         raise Exception('Ошибка в функции compile_extr: не смогли определить тип экстремума')
-    extr.append(corr_price)
+    # Соберем extremum в виде словаря:
+    extr = {"index": index, "date": df.loc[index, 'date'], "close": df.loc[index, 'close'], "extr_type": extr_type,
+            "corr_price": corr_price}
+
     return extr
 
 
@@ -134,7 +164,9 @@ def search_after_mx(df, extremum_list, index, correction):
     # ------------------------------------------
 
     # блок определения перменных для функции:
-    prev_mx = extremum_list[-1][2]
+    # когда экстемум - срисок: prev_mx = extremum_list[-1][2]
+    # print(f'{extremum_list = }, {type(extremum_list)}, \n {extremum_list[-1] = }, {type(extremum_list[-1])}')
+    prev_mx = extremum_list[-1]["close"]
     last_extr_type = 'mx'
     new_extr_type = 'mn'
     limit_corr = mx_corr(prev_mx, correction)
@@ -143,13 +175,15 @@ def search_after_mx(df, extremum_list, index, correction):
 
     # цена закрытия продолжила рост:
     if current_price > prev_mx:
-        new_extr = compile_extr(df, index, last_extr_type)
+        # когда extremum скиском: new_extr = compile_extr(df, index, last_extr_type)
+        new_extr = compile_extr_dict(df, index, last_extr_type)
         update_last_extremum(extremum_list, new_extr)
         add_trend_into_df(df, index, 'up')
 
     # повторили старый экстремум:
     elif current_price == prev_mx:
-        upd_ext = compile_extr(df, index, last_extr_type)
+        # когда extremum скиском: upd_ext = compile_extr(df, index, last_extr_type)
+        upd_ext = compile_extr_dict(df, index, last_extr_type)
         update_last_extremum(extremum_list, upd_ext)  # обновим (передвинем) последний экстремум
         add_trend_into_df(df, index, 'up')
 
@@ -159,7 +193,8 @@ def search_after_mx(df, extremum_list, index, correction):
         return  # выходим из функциии, ничего не делаем
 
     elif limit_corr >= current_price:  # откатились сверх нормы. фиксируем новый экстремум:
-        new_extr = compile_extr(df, index, new_extr_type)
+        # когда extremum скиском: new_extr = compile_extr(df, index, new_extr_type)
+        new_extr = compile_extr_dict(df, index, new_extr_type)
         add_new_extr(extremum_list, new_extr)
         add_trend_into_df(df, index, 'down')
 
@@ -183,7 +218,8 @@ def search_after_mn(df, extremum_list, index, correction):
     # ------------------------------------------
 
     # блок определения перменных для функции:
-    prev_mn = extremum_list[-1][2]
+    # когда extremum списком: prev_mn = extremum_list[-1][2]
+    prev_mn = extremum_list[-1]["close"]
     last_extr_type = 'mn'
     new_extr_type = 'mx'
     limit_corr = mn_corr(prev_mn, correction)  # вычислим цену предельной коррекци для данного движения
@@ -192,13 +228,15 @@ def search_after_mn(df, extremum_list, index, correction):
 
     # цена закрытия продолжает падать:
     if current_price < prev_mn:
-        new_extr = compile_extr(df, index, last_extr_type)
+        # когда extremum списком: new_extr = compile_extr(df, index, last_extr_type)
+        new_extr = compile_extr_dict(df, index, last_extr_type)
         update_last_extremum(extremum_list, new_extr)
         add_trend_into_df(df, index, 'down')
 
     # повторили старый экстремум
     elif current_price == prev_mn:
-        upd_ext = compile_extr(df, index, last_extr_type)
+        # когда extremum списком: upd_ext = compile_extr(df, index, last_extr_type)
+        upd_ext = compile_extr_dict(df, index, last_extr_type)
         update_last_extremum(extremum_list, upd_ext)  # обновим (передвинем) последний экстремум
         add_trend_into_df(df, index, 'down')
 
@@ -209,7 +247,8 @@ def search_after_mn(df, extremum_list, index, correction):
 
     # откатились сверх нормы. фиксируем новый экстремум:
     elif current_price >= limit_corr:
-        new_extr = compile_extr(df, index, new_extr_type)
+        # когда extremum списком: new_extr = compile_extr(df, index, new_extr_type)
+        new_extr = compile_extr_dict(df, index, new_extr_type)
         add_new_extr(extremum_list, new_extr)
         add_trend_into_df(df, index, 'up')
 
@@ -222,15 +261,25 @@ def add_extr_different(extremum_list):
     проверяем волновую структуру движений.
     для этого вычисляем разницу между текущим экстремумом и предыдущим (сравниваем между собой отдельно максимумы и отдельно минимумы)
     по разнице между соседними максимумами и соседними минимумами видно боковик или импульс
+    В словари Extremum из списка extremum_list добавим начения "diff"
     """
     for index, extremum in tqdm(enumerate(extremum_list), desc='Расчет разницы экстремумов в df'):
         if index in (0, 1):     # для первых 2-х экстремумов не можем вычислить разность, поэтому приравниваем их 0
-            extremum_list[index].append(0)
+            extremum_list[index]['diff'] = 0
         else:                   # для остальных экстремумов считаем относительное изменение
-            different = (extremum_list[index][2] - extremum_list[index-2][2])/extremum_list[index][2]
-            extremum_list[index].append(different)
+            different = (extremum_list[index]['close'] - extremum_list[index-2]['close'])/extremum_list[index]['close']
+            extremum_list[index]['diff'] = different
         # print(extremum)       # выводит огромный список всех экстремумов
+
+    # добавим "impulse_up", "imnpule_down", "flat" в extremum_list (найдем импульсы)
+    # импульсом считаем 4 и более экстремума с одинаковым знаком different
+    for index, extremum in tqdm(enumerate(extremum_list), desc='Разбиваем на импульсы и боковики:'):
+       wave: str = 'pass'
+       if all(extremum['diff_extr'][i - 3:i] > 0):
+                extremum['waves'] = 'up'
+            extremum_list[index].append(different)
     return extremum_list
+
 
 def copy_extr_df(df, extremum_list):
     """
@@ -244,19 +293,20 @@ def copy_extr_df(df, extremum_list):
     # сначала перенесем экстремумы в df: ----------------------------------
     df['extr'] = None  # создадим в df столбец под экстремумы и их разность
     df['diff_extr'] = None
+    # print(f'{extremum_list = }, {type(extremum_list)}')
     for extremum in tqdm(extremum_list, desc='Переносим экстремумы в df'):
-        # print(f'{extremum}')
+        #print(f'{extremum}')
 
         # extremum[0] - индекс строки df берем из extremum:
-        df.loc[extremum[0], 'extr'] = extremum[3]           # extremum[3] - тип экстремума mn или mx
-        df.loc[extremum[0], 'diff_extr'] = extremum[5]      # extremum[5] - разность экстремумов
+        df.loc[extremum['index'], 'extr'] = extremum['extr_type']      # extremum[3] - тип экстремума mn или mx
+        df.loc[extremum['index'], 'diff_extr'] = extremum['diff']      # extremum[5] - разность экстремумов
 
      # затем создадим разметку по экстремумам
     # для цветовой инидикации на графике: _________________________________
 
     df[col_name_trend()] = None  # добавим столбец для тренда, размер коррекции (correction) - в названии столбца
 
-    last_extr = extremum_list[1][3]  # Инициируем первую волну, даже если экстремум стоит не в первой строке.
+    last_extr = extremum_list[1]['extr_type']  # Инициируем первую волну, даже если экстремум стоит не в первой строке.
     # Но берем не первое значение из Списка эестремумов extremum_list[0][3], а второе extremum_list[1][3],
     # тк они чередуются и инициирующий экстремум должен отличаться от первого, т.е. быть как второй
 
@@ -304,7 +354,7 @@ def split_into_movements(df):
         extr_type = 'mx'
         add_trend_into_df(df, 0, 'up')
 
-    extr0 = compile_extr(df, 0, extr_type)  # соберем точку первого экстремума датасета
+    extr0 = compile_extr_dict(df, 0, extr_type)  # соберем точку первого экстремума датасета
     # print(f'3. __split_into_movements__: {extr0 = }')
     extremum_list.append(extr0)  # добавим ее в список всех экстремумов
     # --------------------------- конец поиска первого экстремума --------------------------------
@@ -318,7 +368,7 @@ def split_into_movements(df):
             continue
 
         # проверим последний найденый экстремум и действуемт в зависимости от этого:
-        last_extr_type = extremum_list[-1][3]
+        last_extr_type = extremum_list[-1]['extr_type']
 
         if last_extr_type == 'mx':
             search_after_mx(df, extremum_list, index, correction)
