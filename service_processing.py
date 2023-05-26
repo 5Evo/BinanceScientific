@@ -273,11 +273,11 @@ def add_extr_different(extremum_list):
 
     # добавим "impulse_up", "imnpule_down", "flat" в extremum_list (найдем импульсы)
     # импульсом считаем 4 и более экстремума с одинаковым знаком different
-    for index, extremum in tqdm(enumerate(extremum_list), desc='Разбиваем на импульсы и боковики:'):
-       wave: str = 'pass'
-       if all(extremum['diff_extr'][i - 3:i] > 0):
-                extremum['waves'] = 'up'
-            extremum_list[index].append(different)
+    # for index, extremum in tqdm(enumerate(extremum_list), desc='Разбиваем на импульсы и боковики:'):
+    #    wave: str = 'pass'
+    #    if all(extremum['diff_extr'][i - 3:i] > 0):
+    #             extremum['waves'] = 'up'
+    #         extremum_list[index].append(different)
     return extremum_list
 
 
